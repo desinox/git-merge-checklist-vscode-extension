@@ -1,0 +1,74 @@
+{
+  "name": "git-checklist",
+  "displayName": "Git Checklist",
+  "description": "Branches und Commits lokal abhaken, taggen und cherry-picken.",
+  "version": "0.0.1",
+  "publisher": "local",
+  "private": true,
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "SCM Providers",
+    "Other"
+  ],
+  "main": "./dist/extension.js",
+  "activationEvents": [],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "gitChecklist",
+          "title": "Git Checklist",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "gitChecklist": [
+        {
+          "type": "webview",
+          "id": "gitChecklist.panel",
+          "name": "Checklist"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "gitChecklist.refresh",
+        "title": "Git Checklist: Refresh",
+        "icon": "$(refresh)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "gitChecklist.refresh",
+          "when": "view == gitChecklist.panel",
+          "group": "navigation"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "build": "node esbuild.mjs",
+    "watch": "node esbuild.mjs --watch",
+    "typecheck": "tsc --noEmit",
+    "vscode:prepublish": "node esbuild.mjs --production"
+  },
+  "dependencies": {
+    "lucide-react": "^0.456.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "simple-git": "^3.27.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@types/vscode": "^1.85.0",
+    "esbuild": "^0.24.0",
+    "typescript": "^5.6.3"
+  }
+}
