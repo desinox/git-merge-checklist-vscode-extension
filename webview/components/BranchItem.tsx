@@ -1,6 +1,9 @@
+import { useEffect, useState } from 'react';
 import { ChevronRight, ChevronDown, GitBranch } from 'lucide-react';
 import type { BranchData, FileChange } from '../../src/git/types';
 import { CommitItem } from './CommitItem';
+
+const PAGE_SIZE = 20;
 
 interface Props {
   branch: BranchData;
@@ -21,6 +24,18 @@ export function BranchItem({
   onToggleMerged,
   onRequestFiles
 }: Props) {
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+
+  // Reset paging when the visible commit set shrinks (e.g. filter change).
+  useEffect(() => {
+    if (visibleCount > PAGE_SIZE && branch.commits.length <= PAGE_SIZE) {
+      setVisibleCount(PAGE_SIZE);
+    }
+  }, [branch.commits.length, visibleCount]);
+
+  const visibleCommits = branch.commits.slice(0, visibleCount);
+  const remaining = branch.commits.length - visibleCommits.length;
+
   return (
     <div className="branch">
       <button type="button" className="branch-header" onClick={onToggleCollapsed}>
@@ -33,7 +48,7 @@ export function BranchItem({
       </button>
       {!collapsed && (
         <div className="commit-list">
-          {branch.commits.map((commit) => (
+          {visibleCommits.map((commit) => (
             <CommitItem
               key={commit.hash}
               commit={commit}
@@ -43,6 +58,15 @@ export function BranchItem({
               onRequestFiles={onRequestFiles}
             />
           ))}
+          {remaining > 0 && (
+            <button
+              type="button"
+              className="load-more"
+              onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+            >
+              Mehr laden ({remaining} verbleibend)
+            </button>
+          )}
         </div>
       )}
     </div>

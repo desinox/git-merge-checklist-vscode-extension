@@ -225,6 +225,21 @@ body {
   flex-direction: column;
 }
 
+.load-more {
+  border: none;
+  background: transparent;
+  color: var(--vscode-textLink-foreground);
+  cursor: pointer;
+  text-align: left;
+  padding: 5px 8px 6px 30px;
+  font-size: 12px;
+}
+
+.load-more:hover {
+  text-decoration: underline;
+  background: var(--vscode-list-hoverBackground);
+}
+
 .commit {
   border-top: 1px solid var(--vscode-sideBarSectionHeader-border, transparent);
 }

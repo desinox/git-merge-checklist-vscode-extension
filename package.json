@@ -1,11 +1,27 @@
 {
-  "name": "git-checklist",
-  "displayName": "Git Checklist",
-  "description": "Branches und Commits lokal abhaken, taggen und cherry-picken.",
+  "name": "git-merge-checklist",
+  "displayName": "Git Merge Checklist",
+  "description": "Keep a local checklist of which branches and commits you have already cherry-picked / merged.",
   "version": "0.0.1",
-  "publisher": "local",
+  "publisher": "desinox",
   "private": true,
   "license": "MIT",
+  "icon": "media/icon-128.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/desinox/git-merge-checklist-vscode-extension.git"
+  },
+  "homepage": "https://github.com/desinox/git-merge-checklist-vscode-extension#readme",
+  "bugs": {
+    "url": "https://github.com/desinox/git-merge-checklist-vscode-extension/issues"
+  },
+  "keywords": [
+    "git",
+    "cherry-pick",
+    "merge",
+    "checklist",
+    "commits"
+  ],
   "engines": {
     "vscode": "^1.85.0"
   },
@@ -20,7 +36,7 @@
       "activitybar": [
         {
           "id": "gitChecklist",
-          "title": "Git Checklist",
+          "title": "Git Merge Checklist",
           "icon": "media/icon.svg"
         }
       ]
@@ -37,7 +53,7 @@
     "commands": [
       {
         "command": "gitChecklist.refresh",
-        "title": "Git Checklist: Refresh",
+        "title": "Git Merge Checklist: Refresh",
         "icon": "$(refresh)"
       }
     ],
@@ -55,7 +71,9 @@
     "build": "node esbuild.mjs",
     "watch": "node esbuild.mjs --watch",
     "typecheck": "tsc --noEmit",
-    "vscode:prepublish": "node esbuild.mjs --production"
+    "vscode:prepublish": "node esbuild.mjs --production",
+    "package": "vsce package",
+    "publish:ovsx": "ovsx publish"
   },
   "dependencies": {
     "lucide-react": "^0.456.0",
@@ -68,7 +86,9 @@
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^3.9.2",
     "esbuild": "^0.24.0",
+    "ovsx": "^1.0.2",
     "typescript": "^5.6.3"
   }
 }
