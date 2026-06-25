@@ -58,12 +58,12 @@ The host and the webview communicate over a typed `postMessage` protocol
 
 ## Development
 
-Prerequisites: Node.js and Git.
+Prerequisites: Node.js, pnpm, and Git.
 
 ```bash
-npm install
-npm run build      # one-off build (esbuild: extension + webview)
-npm run watch      # build in watch mode
+pnpm install
+pnpm run build      # one-off build (esbuild: extension + webview)
+pnpm run watch      # build in watch mode
 ```
 
 To run it in VS Code / Cursor: open the project and press `F5` ("Run Extension").
@@ -73,7 +73,7 @@ An Extension Development Host opens; the panel lives in the Activity Bar
 ## Packaging
 
 ```bash
-npm run package        # produces a .vsix via @vscode/vsce
+pnpm run package        # produces a .vsix via @vscode/vsce
 ```
 
 Install the resulting `.vsix` through the Extensions view ("Install from VSIX...").

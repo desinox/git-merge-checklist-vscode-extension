@@ -4,5 +4,9 @@ webview/**
 node_modules/**
 esbuild.mjs
 tsconfig.json
+biome.json
+pnpm-lock.yaml
+pnpm-workspace.yaml
+package-lock.json
 **/*.map
 .gitignore

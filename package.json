@@ -2,7 +2,7 @@
 	"name": "git-merge-checklist",
 	"displayName": "Git Merge Checklist",
 	"description": "Keep a local checklist of which branches and commits you have already cherry-picked / merged.",
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"publisher": "desinox",
 	"private": true,
 	"license": "MIT",
@@ -82,8 +82,9 @@
 		"lint": "biome lint .",
 		"check": "biome check --write .",
 		"vscode:prepublish": "node esbuild.mjs --production",
-		"package": "vsce package",
-		"publish:ovsx": "ovsx publish"
+		"package": "vsce package --no-dependencies",
+		"publish:marketplace": "vsce publish --no-dependencies",
+		"publish:ovsx": "ovsx publish --no-dependencies"
 	},
 	"dependencies": {
 		"lucide-react": "^0.456.0",
