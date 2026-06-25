@@ -25,9 +25,12 @@ export type WebviewToHost =
   | { type: 'requestData'; referenceBranch: string }
   | { type: 'getCommitFiles'; hash: string }
   | { type: 'openFile'; hash: string; file: string; oldPath?: string; status: string }
+  | { type: 'openWorkingFile'; file: string }
+  | { type: 'diffWithWorking'; hash: string; file: string }
   | { type: 'copyHash'; hash: string }
   | { type: 'setMerged'; hash: string; merged: boolean }
   | { type: 'cherryPick'; hash: string; subject: string }
+  | { type: 'deleteBranch'; ref: BranchRef }
   | { type: 'saveFilters'; filters: FilterState };
 
 /** Messages sent from the extension host to the webview. */

@@ -220,9 +220,44 @@ body {
   font-weight: 400;
 }
 
+/* Fully-merged ("done") branches are highlighted instead of hidden. */
+.branch-merged .branch-name {
+  color: var(--vscode-errorForeground);
+}
+
+.branch-done {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--vscode-errorForeground);
+  border: 1px solid var(--vscode-errorForeground);
+  border-radius: 9px;
+  padding: 0 7px;
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.branch-delete {
+  flex: 0 0 auto;
+  opacity: 0;
+}
+
+.branch-header:hover .branch-delete,
+.branch-merged .branch-delete {
+  opacity: 0.75;
+}
+
+.branch-delete:hover {
+  opacity: 1 !important;
+  color: var(--vscode-errorForeground);
+}
+
 .commit-list {
   display: flex;
   flex-direction: column;
+  margin-left: 10px;
+  border-left: 1px solid var(--vscode-tree-indentGuidesStroke, var(--vscode-sideBarSectionHeader-border, #8884));
 }
 
 .load-more {
@@ -290,11 +325,38 @@ body {
   white-space: nowrap;
 }
 
+.commit-age {
+  flex: 0 0 auto;
+  color: var(--vscode-descriptionForeground);
+  font-size: 11px;
+  opacity: 0.85;
+  white-space: nowrap;
+}
+
+.branch-age {
+  flex: 0 0 auto;
+  color: var(--vscode-descriptionForeground);
+  font-size: 11px;
+  font-weight: 400;
+  opacity: 0.7;
+  white-space: nowrap;
+}
+
 .commit-short {
   flex: 0 0 auto;
   color: var(--vscode-descriptionForeground);
   font-family: var(--vscode-editor-font-family, monospace);
   font-size: 11px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+.commit-short:hover {
+  color: var(--vscode-foreground);
+  background: var(--vscode-toolbar-hoverBackground, var(--vscode-list-hoverBackground));
 }
 
 .commit-merged .commit-subject,
@@ -397,4 +459,11 @@ body {
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 12px;
+}
+
+.file-actions {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 2px;
 }

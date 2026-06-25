@@ -33,7 +33,7 @@ export function FilterBar({
 
   return (
     <div className="filter-bar">
-      <div className="tag-select" role="group" aria-label="Branch-Quelle">
+      <div className="tag-select" role="group" aria-label="Branch source">
         {sources.map((source) => {
           const active =
             filters.sources.length === 0 || filters.sources.includes(source);
@@ -46,7 +46,7 @@ export function FilterBar({
                 active ? '' : 'tag-dimmed'
               }`}
               onClick={() => toggleSource(source)}
-              title={`Filtern nach ${sourceLabel(source)}`}
+              title={`Filter by ${sourceLabel(source)}`}
             >
               {sourceLabel(source)}
             </button>
@@ -57,9 +57,9 @@ export function FilterBar({
             type="button"
             className="tag tag-clear"
             onClick={() => onChange({ sources: [] })}
-            title="Alle Quellen anzeigen"
+            title="Show all sources"
           >
-            Alle
+            All
           </button>
         )}
       </div>
@@ -69,7 +69,7 @@ export function FilterBar({
         <input
           type="text"
           className="search-input"
-          placeholder="Branch-Name suchen..."
+          placeholder="Search branch name..."
           value={filters.includePattern}
           onChange={(e) => onChange({ includePattern: e.target.value })}
         />
@@ -77,7 +77,7 @@ export function FilterBar({
           type="button"
           className={`regex-toggle ${filters.includeRegex ? 'active' : ''}`}
           onClick={() => onChange({ includeRegex: !filters.includeRegex })}
-          title="Regex verwenden"
+          title="Use regex"
         >
           .*
         </button>
@@ -88,7 +88,7 @@ export function FilterBar({
         <input
           type="text"
           className="search-input"
-          placeholder="Branch-Name ausschliessen..."
+          placeholder="Exclude branch name..."
           value={filters.excludePattern}
           onChange={(e) => onChange({ excludePattern: e.target.value })}
         />
@@ -96,7 +96,7 @@ export function FilterBar({
           type="button"
           className={`regex-toggle ${filters.excludeRegex ? 'active' : ''}`}
           onClick={() => onChange({ excludeRegex: !filters.excludeRegex })}
-          title="Regex verwenden"
+          title="Use regex"
         >
           .*
         </button>
@@ -104,14 +104,14 @@ export function FilterBar({
 
       <label className="ref-row">
         <GitBranch size={14} className="search-icon" />
-        <span className="ref-label">Referenz</span>
+        <span className="ref-label">Reference</span>
         <select
           className="ref-select"
           value={filters.referenceBranch}
           onChange={(e) => onReferenceBranchChange(e.target.value)}
         >
           {refs.every((r) => r.fullName !== filters.referenceBranch) && (
-            <option value={filters.referenceBranch}>{filters.referenceBranch || '(keiner)'}</option>
+            <option value={filters.referenceBranch}>{filters.referenceBranch || '(none)'}</option>
           )}
           {refs.map((r) => (
             <option key={r.fullName} value={r.fullName}>
@@ -129,7 +129,7 @@ export function FilterBar({
             checked={filters.showInReference}
             onChange={(e) => onChange({ showInReference: e.target.checked })}
           />
-          <span>Commits zeigen, die im Referenz-Branch sind</span>
+          <span>Show commits that are in the reference branch</span>
         </label>
         <label className="checkbox">
           <input
@@ -137,7 +137,7 @@ export function FilterBar({
             checked={filters.showMerged}
             onChange={(e) => onChange({ showMerged: e.target.checked })}
           />
-          <span>Als gemergt markierte Commits zeigen</span>
+          <span>Show commits marked as merged</span>
         </label>
       </div>
     </div>

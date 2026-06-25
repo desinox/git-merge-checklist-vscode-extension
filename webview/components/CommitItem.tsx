@@ -1,7 +1,16 @@
 import { useState } from 'react';
-import { Merge, Copy, GitGraph, ChevronRight, ChevronDown, FileText } from 'lucide-react';
+import {
+  Merge,
+  GitGraph,
+  ChevronRight,
+  ChevronDown,
+  FileText,
+  ExternalLink,
+  GitCompare
+} from 'lucide-react';
 import type { CommitInfo, FileChange } from '../../src/git/types';
 import { postMessage } from '../vscodeApi';
+import { relativeTime } from '../relativeTime';
 import { Avatar } from './Avatar';
 
 interface Props {
@@ -49,28 +58,49 @@ export function CommitItem({
 
   return (
     <div className={`commit ${merged ? 'commit-merged' : ''}`}>
-      <div className="commit-row">
-        <button
-          type="button"
-          className="expander"
-          onClick={toggleExpanded}
-          title={expanded ? 'Dateien ausblenden' : 'Geaenderte Dateien anzeigen'}
-        >
+      <div
+        className="commit-row"
+        role="button"
+        tabIndex={0}
+        onClick={toggleExpanded}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            toggleExpanded();
+          }
+        }}
+        title={expanded ? 'Hide files' : 'Show changed files'}
+      >
+        <span className="expander">
           {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-        </button>
+        </span>
         <Avatar url={commit.avatarUrl} name={commit.authorName} />
         <span className="commit-subject" title={commit.subject}>
           {commit.subject}
         </span>
-        <span className="commit-short" title={commit.hash}>
-          {commit.shortHash}
+        <span className="commit-age" title={new Date(commit.date).toLocaleString()}>
+          {relativeTime(commit.date)}
         </span>
+        <button
+          type="button"
+          className="commit-short"
+          title={`Copy full hash (${commit.hash})`}
+          onClick={(e) => {
+            e.stopPropagation();
+            postMessage({ type: 'copyHash', hash: commit.hash });
+          }}
+        >
+          {commit.shortHash}
+        </button>
         <div className="commit-actions">
           <button
             type="button"
             className={`icon-btn merge-toggle ${merged ? 'active' : ''}`}
-            onClick={() => onToggleMerged(commit.hash, !merged)}
-            title={merged ? 'Als nicht gemergt markieren' : 'Als gemergt markieren'}
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleMerged(commit.hash, !merged);
+            }}
+            title={merged ? 'Mark as not merged' : 'Mark as merged'}
             aria-pressed={merged}
           >
             <Merge size={15} />
@@ -78,18 +108,11 @@ export function CommitItem({
           <button
             type="button"
             className="icon-btn"
-            onClick={() => postMessage({ type: 'copyHash', hash: commit.hash })}
-            title="Commit-Hash kopieren"
-          >
-            <Copy size={15} />
-          </button>
-          <button
-            type="button"
-            className="icon-btn"
-            onClick={() =>
-              postMessage({ type: 'cherryPick', hash: commit.hash, subject: commit.subject })
-            }
-            title="Cherry-Pick"
+            onClick={(e) => {
+              e.stopPropagation();
+              postMessage({ type: 'cherryPick', hash: commit.hash, subject: commit.subject });
+            }}
+            title="Cherry-pick"
           >
             <GitGraph size={15} />
           </button>
@@ -97,16 +120,23 @@ export function CommitItem({
       </div>
       {expanded && (
         <div className="commit-files">
-          {files === undefined && <div className="file-loading">Lade Dateien...</div>}
+          {files === undefined && <div className="file-loading">Loading files...</div>}
           {files && files.length === 0 && (
-            <div className="file-loading">Keine Dateiaenderungen.</div>
+            <div className="file-loading">No file changes.</div>
           )}
           {files?.map((file) => (
-            <button
-              type="button"
+            <div
               key={`${file.status}:${file.path}`}
               className="file-row"
+              role="button"
+              tabIndex={0}
               onClick={() => openFile(file)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  openFile(file);
+                }
+              }}
               title={file.oldPath ? `${file.oldPath} -> ${file.path}` : file.path}
             >
               <FileText size={13} className="file-icon" />
@@ -114,7 +144,31 @@ export function CommitItem({
                 {file.status}
               </span>
               <span className="file-path">{file.path}</span>
-            </button>
+              <div className="file-actions">
+                <button
+                  type="button"
+                  className="icon-btn"
+                  title="Open file in the current working tree"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    postMessage({ type: 'openWorkingFile', file: file.path });
+                  }}
+                >
+                  <ExternalLink size={13} />
+                </button>
+                <button
+                  type="button"
+                  className="icon-btn"
+                  title="Compare with the file in the current working tree"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    postMessage({ type: 'diffWithWorking', hash: commit.hash, file: file.path });
+                  }}
+                >
+                  <GitCompare size={13} />
+                </button>
+              </div>
+            </div>
           ))}
         </div>
       )}

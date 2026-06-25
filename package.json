@@ -65,7 +65,14 @@
           "group": "navigation"
         }
       ]
-    }
+    },
+    "keybindings": [
+      {
+        "command": "gitChecklist.panel.focus",
+        "key": "shift+ctrl+alt+g",
+        "mac": "shift+ctrl+alt+g"
+      }
+    ]
   },
   "scripts": {
     "build": "node esbuild.mjs",

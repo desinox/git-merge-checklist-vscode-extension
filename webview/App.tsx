@@ -1,9 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { BranchData, BranchRef, FileChange } from '../src/git/types';
 import type { FilterState, HostToWebview } from '../src/messages';
-import { onMessage, postMessage } from './vscodeApi';
+import { getState, onMessage, postMessage, setState } from './vscodeApi';
 import { FilterBar } from './components/FilterBar';
 import { BranchItem } from './components/BranchItem';
+
+/** Snapshot kept in the webview state for instant restore after a reload. */
+interface PersistedState {
+  refs: BranchRef[];
+  sources: string[];
+  branches: BranchData[];
+  mergedHashes: string[];
+  filters: FilterState;
+}
 
 const DEFAULT_FILTERS: FilterState = {
   sources: [],
@@ -32,12 +41,18 @@ function matches(name: string, pattern: string, useRegex: boolean): boolean {
   return name.toLowerCase().includes(pattern.toLowerCase());
 }
 
+const persisted = getState<PersistedState>();
+
 export function App() {
-  const [refs, setRefs] = useState<BranchRef[]>([]);
-  const [sources, setSources] = useState<string[]>([]);
-  const [branches, setBranches] = useState<BranchData[]>([]);
-  const [mergedHashes, setMergedHashes] = useState<Set<string>>(new Set());
-  const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
+  const [refs, setRefs] = useState<BranchRef[]>(persisted?.refs ?? []);
+  const [sources, setSources] = useState<string[]>(persisted?.sources ?? []);
+  const [branches, setBranches] = useState<BranchData[]>(persisted?.branches ?? []);
+  const [mergedHashes, setMergedHashes] = useState<Set<string>>(
+    new Set(persisted?.mergedHashes ?? [])
+  );
+  const [filters, setFilters] = useState<FilterState>(
+    persisted?.filters ?? DEFAULT_FILTERS
+  );
   const [commitFiles, setCommitFiles] = useState<Record<string, FileChange[]>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | undefined>();
@@ -90,6 +105,18 @@ export function App() {
     }
   }, [filters]);
 
+  // Keep a snapshot in the webview state so a full reload restores instantly
+  // while fresh data is fetched in the background.
+  useEffect(() => {
+    setState({
+      refs,
+      sources,
+      branches,
+      mergedHashes: [...mergedHashes],
+      filters
+    } satisfies PersistedState);
+  }, [refs, sources, branches, mergedHashes, filters]);
+
   const updateFilters = (patch: Partial<FilterState>) => {
     setFilters((prev) => ({ ...prev, ...patch }));
   };
@@ -121,6 +148,10 @@ export function App() {
     }
   };
 
+  const deleteBranch = (ref: BranchData['ref']) => {
+    postMessage({ type: 'deleteBranch', ref });
+  };
+
   const visibleBranches = useMemo(() => {
     const sourceSet = new Set(filters.sources);
     return branches
@@ -131,19 +162,22 @@ export function App() {
           !filters.excludePattern ||
           !matches(b.ref.name, filters.excludePattern, filters.excludeRegex)
       )
-      .map((b) => ({
-        ...b,
-        commits: b.commits.filter((c) => {
-          if (!filters.showInReference && c.inReference) {
-            return false;
-          }
-          if (!filters.showMerged && mergedHashes.has(c.hash)) {
-            return false;
-          }
-          return true;
-        })
-      }))
-      .filter((b) => b.commits.length > 0);
+      .map((b) => {
+        // Commits relevant to this branch (respecting the reference filter).
+        const relevant = b.commits.filter(
+          (c) => filters.showInReference || !c.inReference
+        );
+        const unmerged = relevant.filter((c) => !mergedHashes.has(c.hash));
+        // A branch whose relevant commits are all marked merged is "done".
+        const fullyMerged = relevant.length > 0 && unmerged.length === 0;
+        const commits = relevant.filter(
+          (c) => filters.showMerged || !mergedHashes.has(c.hash)
+        );
+        return { ...b, commits, fullyMerged };
+      })
+      // Keep branches that still have something to show, plus fully-merged
+      // branches (highlighted) so they can be reviewed/deleted.
+      .filter((b) => b.fullyMerged || b.commits.length > 0);
   }, [branches, filters, mergedHashes]);
 
   return (
@@ -156,9 +190,11 @@ export function App() {
         onReferenceBranchChange={setReferenceBranch}
       />
       {error && <div className="error">{error}</div>}
-      {loading && <div className="status">Lade Branches...</div>}
+      {loading && branches.length === 0 && (
+        <div className="status">Loading branches...</div>
+      )}
       {!loading && !error && visibleBranches.length === 0 && (
-        <div className="status">Keine Branches/Commits fuer die aktuellen Filter.</div>
+        <div className="status">No branches/commits for the current filters.</div>
       )}
       <div className="branch-list">
         {visibleBranches.map((branch) => (
@@ -166,11 +202,13 @@ export function App() {
             key={branch.ref.fullName}
             branch={branch}
             collapsed={filters.collapsedBranches.includes(branch.ref.fullName)}
+            fullyMerged={branch.fullyMerged}
             mergedHashes={mergedHashes}
             commitFiles={commitFiles}
             onToggleCollapsed={() => toggleBranchCollapsed(branch.ref.fullName)}
             onToggleMerged={toggleMerged}
             onRequestFiles={requestCommitFiles}
+            onDelete={() => deleteBranch(branch.ref)}
           />
         ))}
       </div>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { ChevronRight, ChevronDown, GitBranch } from 'lucide-react';
+import { ChevronRight, ChevronDown, GitBranch, Check, Trash2 } from 'lucide-react';
 import type { BranchData, FileChange } from '../../src/git/types';
+import { relativeTime } from '../relativeTime';
 import { CommitItem } from './CommitItem';
 
 const PAGE_SIZE = 20;
@@ -8,21 +9,25 @@ const PAGE_SIZE = 20;
 interface Props {
   branch: BranchData;
   collapsed: boolean;
+  fullyMerged: boolean;
   mergedHashes: Set<string>;
   commitFiles: Record<string, FileChange[]>;
   onToggleCollapsed: () => void;
   onToggleMerged: (hash: string, merged: boolean) => void;
   onRequestFiles: (hash: string) => void;
+  onDelete: () => void;
 }
 
 export function BranchItem({
   branch,
   collapsed,
+  fullyMerged,
   mergedHashes,
   commitFiles,
   onToggleCollapsed,
   onToggleMerged,
-  onRequestFiles
+  onRequestFiles,
+  onDelete
 }: Props) {
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
@@ -37,15 +42,55 @@ export function BranchItem({
   const remaining = branch.commits.length - visibleCommits.length;
 
   return (
-    <div className="branch">
-      <button type="button" className="branch-header" onClick={onToggleCollapsed}>
+    <div className={`branch ${fullyMerged ? 'branch-merged' : ''}`}>
+      <div
+        className="branch-header"
+        role="button"
+        tabIndex={0}
+        onClick={onToggleCollapsed}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onToggleCollapsed();
+          }
+        }}
+      >
         {collapsed ? <ChevronRight size={15} /> : <ChevronDown size={15} />}
         <GitBranch size={14} className="branch-icon" />
         <span className="branch-name" title={branch.ref.fullName}>
           {branch.ref.name}
         </span>
-        <span className="branch-count">{branch.commits.length}</span>
-      </button>
+        {branch.lastCommitDate && (
+          <span
+            className="branch-age"
+            title={new Date(branch.lastCommitDate).toLocaleString()}
+          >
+            {relativeTime(branch.lastCommitDate)}
+          </span>
+        )}
+        {fullyMerged ? (
+          <span className="branch-done" title="All commits marked as merged">
+            <Check size={12} /> merged
+          </span>
+        ) : (
+          <span className="branch-count">{branch.commits.length}</span>
+        )}
+        <button
+          type="button"
+          className="icon-btn branch-delete"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
+          title={
+            branch.ref.type === 'remote'
+              ? 'Delete branch on remote'
+              : 'Delete local branch'
+          }
+        >
+          <Trash2 size={14} />
+        </button>
+      </div>
       {!collapsed && (
         <div className="commit-list">
           {visibleCommits.map((commit) => (
@@ -64,7 +109,7 @@ export function BranchItem({
               className="load-more"
               onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
             >
-              Mehr laden ({remaining} verbleibend)
+              Load more ({remaining} remaining)
             </button>
           )}
         </div>

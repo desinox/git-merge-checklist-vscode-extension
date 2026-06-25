@@ -8,7 +8,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const repoRoot = await resolveRepoRoot();
   if (!repoRoot) {
     vscode.window.showWarningMessage(
-      'Git Checklist: Kein Git-Repository im Workspace gefunden.'
+      'Git Merge Checklist: No git repository found in the workspace.'
     );
     return;
   }
@@ -28,7 +28,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(
       ChecklistViewProvider.viewType,
-      viewProvider
+      viewProvider,
+      // Keep the webview (and its loaded data) alive when the view is hidden,
+      // so reopening the sidebar does not re-run the whole git fetch.
+      { webviewOptions: { retainContextWhenHidden: true } }
     )
   );
 

@@ -6,6 +6,7 @@ interface DiffUriData {
   hash: string;
   /** Revision to read content from, e.g. "<hash>" or "<hash>^". */
   rev: string;
+  /** Repo-relative path used for `git show <rev>:<path>`. */
   filePath: string;
 }
 
@@ -34,13 +35,21 @@ export class CommitDiffProvider implements vscode.TextDocumentContentProvider {
   }
 }
 
-function buildUri(rev: string, hash: string, filePath: string): vscode.Uri {
+/**
+ * Builds a URI for our content provider. The path is the absolute on-disk path
+ * so the diff editor shows proper breadcrumbs (relative to the workspace
+ * folder), while the revision and repo-relative path travel in the query.
+ */
+function buildUri(
+  repoRoot: string,
+  rev: string,
+  hash: string,
+  filePath: string
+): vscode.Uri {
   const data: DiffUriData = { hash, rev, filePath };
-  // Keep the real file extension in the path so the diff editor picks the
-  // correct language; encode the revision/path in the query.
   return vscode.Uri.from({
     scheme: CommitDiffProvider.scheme,
-    path: `/${filePath}`,
+    path: path.join(repoRoot, filePath),
     query: Buffer.from(JSON.stringify(data)).toString('base64')
   });
 }
@@ -50,6 +59,7 @@ function buildUri(rev: string, hash: string, filePath: string): vscode.Uri {
  * commit. Added files show an empty left side; deleted files an empty right.
  */
 export async function openCommitFileDiff(
+  repoRoot: string,
   hash: string,
   shortHash: string,
   filePath: string,
@@ -60,10 +70,29 @@ export async function openCommitFileDiff(
   const isDeleted = status.startsWith('D');
   const leftPath = oldPath ?? filePath;
 
-  const leftUri = buildUri(isAdded ? '' : `${hash}^`, hash, leftPath);
-  const rightUri = buildUri(isDeleted ? '' : hash, hash, filePath);
+  const leftUri = buildUri(repoRoot, isAdded ? '' : `${hash}^`, hash, leftPath);
+  const rightUri = buildUri(repoRoot, isDeleted ? '' : hash, hash, filePath);
 
   const title = `${path.basename(filePath)} (${shortHash})`;
+  await vscode.commands.executeCommand('vscode.diff', leftUri, rightUri, title, {
+    preview: true
+  });
+}
+
+/**
+ * Diffs the file as it was in the given commit against the version currently in
+ * the working tree (the checked-out branch).
+ */
+export async function openDiffWithWorkingTree(
+  repoRoot: string,
+  hash: string,
+  shortHash: string,
+  filePath: string
+): Promise<void> {
+  const leftUri = buildUri(repoRoot, hash, hash, filePath);
+  const rightUri = vscode.Uri.file(path.join(repoRoot, filePath));
+
+  const title = `${path.basename(filePath)} (${shortHash} \u2194 Working Tree)`;
   await vscode.commands.executeCommand('vscode.diff', leftUri, rightUri, title, {
     preview: true
   });

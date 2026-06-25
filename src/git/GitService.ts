@@ -1,18 +1,58 @@
-import { simpleGit, SimpleGit } from 'simple-git';
+import { simpleGit, type SimpleGit } from 'simple-git';
 import type { BranchData, BranchRef, CommitInfo, FileChange } from './types';
 import type { CherryPickMode } from '../messages';
 import { gravatarUrl } from './gravatar';
 
 const FIELD_SEP = '\u001f';
 const RECORD_SEP = '\u001e';
-const MAX_COMMITS_PER_BRANCH = 200;
+const MAX_COMMITS_PER_BRANCH = 100;
 const MAX_REFERENCE_COMMITS = 20000;
+/** Max number of `git log` calls running at once when loading branches. */
+const FETCH_CONCURRENCY = 8;
+
+/** Runs an async mapper over items with a bounded concurrency. */
+async function mapLimit<T, R>(
+  items: T[],
+  limit: number,
+  fn: (item: T) => Promise<R>
+): Promise<R[]> {
+  const results: R[] = new Array(items.length);
+  let next = 0;
+  const worker = async () => {
+    while (true) {
+      const index = next++;
+      if (index >= items.length) {
+        return;
+      }
+      results[index] = await fn(items[index]);
+    }
+  };
+  const workers = Array.from(
+    { length: Math.min(limit, items.length) },
+    () => worker()
+  );
+  await Promise.all(workers);
+  return results;
+}
 
 export class GitService {
   private git: SimpleGit;
 
   constructor(private readonly repoRoot: string) {
-    this.git = simpleGit(repoRoot);
+    // Run git non-interactively: there is no TTY/editor in the extension host,
+    // so any command that would open an editor (e.g. cherry-pick that needs a
+    // merge commit message) must not block. We force the editor to the `true`
+    // command, which accepts the prefilled message and exits 0. simple-git
+    // blocks GIT_EDITOR by default; allowUnsafeEditor opts in (safe here since
+    // we hard-code the value rather than taking it from user input).
+    this.git = simpleGit({
+      baseDir: repoRoot,
+      unsafe: { allowUnsafeEditor: true }
+    }).env({
+      ...process.env,
+      GIT_EDITOR: 'true',
+      GIT_SEQUENCE_EDITOR: 'true'
+    });
   }
 
   get root(): string {
@@ -65,8 +105,10 @@ export class GitService {
           isCurrent: shortName === current
         });
       } else if (fullRef.startsWith('refs/remotes/')) {
-        // Skip symbolic refs like origin/HEAD.
-        if (shortName.endsWith('/HEAD')) {
+        // Skip the remote's symbolic HEAD pointer. Note: git shortens
+        // refs/remotes/origin/HEAD to just "origin", so we must check the
+        // full ref name, not the short one.
+        if (fullRef.endsWith('/HEAD')) {
           continue;
         }
         const remote = shortName.split('/')[0];
@@ -162,13 +204,11 @@ export class GitService {
     const refs = await this.getBranchRefs();
     const referenceHashes = await this.getReferenceHashes(referenceBranch);
 
-    const data = await Promise.all(
-      refs.map(async (ref) => {
-        const commits = await this.getCommitsForBranch(ref.fullName, referenceHashes);
-        const lastCommitDate = commits.length > 0 ? commits[0].date : '';
-        return { ref, lastCommitDate, commits } as BranchData;
-      })
-    );
+    const data = await mapLimit(refs, FETCH_CONCURRENCY, async (ref) => {
+      const commits = await this.getCommitsForBranch(ref.fullName, referenceHashes);
+      const lastCommitDate = commits.length > 0 ? commits[0].date : '';
+      return { ref, lastCommitDate, commits } as BranchData;
+    });
 
     data.sort((a, b) => (a.lastCommitDate < b.lastCommitDate ? 1 : -1));
     return data;
@@ -190,8 +230,11 @@ export class GitService {
         continue;
       }
       const parts = trimmed.split('\t');
-      const status = parts[0];
-      if (status.startsWith('R') || status.startsWith('C')) {
+      const raw = parts[0];
+      // Normalize statuses like "R100"/"C75" to a single letter, matching the
+      // way VS Code's source control shows them.
+      const status = raw[0];
+      if (status === 'R' || status === 'C') {
         // Rename/copy: status \t old \t new
         files.push({ status, oldPath: parts[1], path: parts[2] ?? parts[1] });
       } else {
@@ -211,13 +254,34 @@ export class GitService {
   }
 
   async cherryPick(hash: string, mode: CherryPickMode): Promise<void> {
-    const args = ['cherry-pick'];
-    if (mode === 'edit') {
-      args.push('--edit');
-    } else if (mode === 'no-commit') {
-      args.push('--no-commit');
+    if (mode === 'pick') {
+      // Native cherry-pick preserves the original author automatically.
+      await this.git.raw(['cherry-pick', hash]);
+      return;
     }
-    args.push(hash);
-    await this.git.raw(args);
+    // 'edit' and 'no-commit': apply without committing, but record
+    // CHERRY_PICK_HEAD so the eventual commit (via the Source Control view or
+    // our own commit) keeps the original author and message. A plain
+    // `cherry-pick -n` does NOT set this, which is why a follow-up commit would
+    // otherwise be attributed to the current user.
+    await this.git.raw(['cherry-pick', '--no-commit', hash]);
+    await this.git.raw(['update-ref', 'CHERRY_PICK_HEAD', hash]);
+  }
+
+  async cherryPickAbort(): Promise<void> {
+    await this.git.raw(['cherry-pick', '--abort']);
+  }
+
+  /** Deletes a branch. Remote branches are deleted on their remote. */
+  async deleteBranch(ref: BranchRef): Promise<void> {
+    if (ref.type === 'remote' && ref.remote) {
+      const prefix = `${ref.remote}/`;
+      const branchName = ref.name.startsWith(prefix)
+        ? ref.name.slice(prefix.length)
+        : ref.name;
+      await this.git.raw(['push', ref.remote, '--delete', branchName]);
+    } else {
+      await this.git.raw(['branch', '-D', ref.fullName]);
+    }
   }
 }
