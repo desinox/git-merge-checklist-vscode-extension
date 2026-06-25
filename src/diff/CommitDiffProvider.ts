@@ -1,13 +1,13 @@
-import * as vscode from 'vscode';
-import * as path from 'path';
-import type { GitService } from '../git/GitService';
+import * as path from "path";
+import * as vscode from "vscode";
+import type { GitService } from "../git/GitService";
 
 interface DiffUriData {
-  hash: string;
-  /** Revision to read content from, e.g. "<hash>" or "<hash>^". */
-  rev: string;
-  /** Repo-relative path used for `git show <rev>:<path>`. */
-  filePath: string;
+	hash: string;
+	/** Revision to read content from, e.g. "<hash>" or "<hash>^". */
+	rev: string;
+	/** Repo-relative path used for `git show <rev>:<path>`. */
+	filePath: string;
 }
 
 /**
@@ -16,23 +16,23 @@ interface DiffUriData {
  * used by git-graph's DiffDocProvider.
  */
 export class CommitDiffProvider implements vscode.TextDocumentContentProvider {
-  static readonly scheme = 'gitchecklist';
+	static readonly scheme = "gitchecklist";
 
-  constructor(private readonly git: GitService) {}
+	constructor(private readonly git: GitService) {}
 
-  async provideTextDocumentContent(uri: vscode.Uri): Promise<string> {
-    try {
-      const data = JSON.parse(
-        Buffer.from(uri.query, 'base64').toString('utf8')
-      ) as DiffUriData;
-      if (!data.rev) {
-        return '';
-      }
-      return await this.git.getFileAtRevision(data.rev, data.filePath);
-    } catch {
-      return '';
-    }
-  }
+	async provideTextDocumentContent(uri: vscode.Uri): Promise<string> {
+		try {
+			const data = JSON.parse(
+				Buffer.from(uri.query, "base64").toString("utf8"),
+			) as DiffUriData;
+			if (!data.rev) {
+				return "";
+			}
+			return await this.git.getFileAtRevision(data.rev, data.filePath);
+		} catch {
+			return "";
+		}
+	}
 }
 
 /**
@@ -41,17 +41,17 @@ export class CommitDiffProvider implements vscode.TextDocumentContentProvider {
  * folder), while the revision and repo-relative path travel in the query.
  */
 function buildUri(
-  repoRoot: string,
-  rev: string,
-  hash: string,
-  filePath: string
+	repoRoot: string,
+	rev: string,
+	hash: string,
+	filePath: string,
 ): vscode.Uri {
-  const data: DiffUriData = { hash, rev, filePath };
-  return vscode.Uri.from({
-    scheme: CommitDiffProvider.scheme,
-    path: path.join(repoRoot, filePath),
-    query: Buffer.from(JSON.stringify(data)).toString('base64')
-  });
+	const data: DiffUriData = { hash, rev, filePath };
+	return vscode.Uri.from({
+		scheme: CommitDiffProvider.scheme,
+		path: path.join(repoRoot, filePath),
+		query: Buffer.from(JSON.stringify(data)).toString("base64"),
+	});
 }
 
 /**
@@ -59,24 +59,35 @@ function buildUri(
  * commit. Added files show an empty left side; deleted files an empty right.
  */
 export async function openCommitFileDiff(
-  repoRoot: string,
-  hash: string,
-  shortHash: string,
-  filePath: string,
-  status: string,
-  oldPath: string | undefined
+	repoRoot: string,
+	hash: string,
+	shortHash: string,
+	filePath: string,
+	status: string,
+	oldPath: string | undefined,
 ): Promise<void> {
-  const isAdded = status.startsWith('A');
-  const isDeleted = status.startsWith('D');
-  const leftPath = oldPath ?? filePath;
+	const isAdded = status.startsWith("A");
+	const isDeleted = status.startsWith("D");
+	const leftPath = oldPath ?? filePath;
 
-  const leftUri = buildUri(repoRoot, isAdded ? '' : `${hash}^`, hash, leftPath);
-  const rightUri = buildUri(repoRoot, isDeleted ? '' : hash, hash, filePath);
+	const leftUri = buildUri(
+		repoRoot,
+		isAdded ? "" : `${hash}^`,
+		hash,
+		leftPath,
+	);
+	const rightUri = buildUri(repoRoot, isDeleted ? "" : hash, hash, filePath);
 
-  const title = `${path.basename(filePath)} (${shortHash})`;
-  await vscode.commands.executeCommand('vscode.diff', leftUri, rightUri, title, {
-    preview: true
-  });
+	const title = `${path.basename(filePath)} (${shortHash})`;
+	await vscode.commands.executeCommand(
+		"vscode.diff",
+		leftUri,
+		rightUri,
+		title,
+		{
+			preview: true,
+		},
+	);
 }
 
 /**
@@ -84,16 +95,22 @@ export async function openCommitFileDiff(
  * the working tree (the checked-out branch).
  */
 export async function openDiffWithWorkingTree(
-  repoRoot: string,
-  hash: string,
-  shortHash: string,
-  filePath: string
+	repoRoot: string,
+	hash: string,
+	shortHash: string,
+	filePath: string,
 ): Promise<void> {
-  const leftUri = buildUri(repoRoot, hash, hash, filePath);
-  const rightUri = vscode.Uri.file(path.join(repoRoot, filePath));
+	const leftUri = buildUri(repoRoot, hash, hash, filePath);
+	const rightUri = vscode.Uri.file(path.join(repoRoot, filePath));
 
-  const title = `${path.basename(filePath)} (${shortHash} \u2194 Working Tree)`;
-  await vscode.commands.executeCommand('vscode.diff', leftUri, rightUri, title, {
-    preview: true
-  });
+	const title = `${path.basename(filePath)} (${shortHash} \u2194 Working Tree)`;
+	await vscode.commands.executeCommand(
+		"vscode.diff",
+		leftUri,
+		rightUri,
+		title,
+		{
+			preview: true,
+		},
+	);
 }

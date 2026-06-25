@@ -1,101 +1,106 @@
 {
-  "name": "git-merge-checklist",
-  "displayName": "Git Merge Checklist",
-  "description": "Keep a local checklist of which branches and commits you have already cherry-picked / merged.",
-  "version": "0.0.1",
-  "publisher": "desinox",
-  "private": true,
-  "license": "MIT",
-  "icon": "media/icon-128.png",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/desinox/git-merge-checklist-vscode-extension.git"
-  },
-  "homepage": "https://github.com/desinox/git-merge-checklist-vscode-extension#readme",
-  "bugs": {
-    "url": "https://github.com/desinox/git-merge-checklist-vscode-extension/issues"
-  },
-  "keywords": [
-    "git",
-    "cherry-pick",
-    "merge",
-    "checklist",
-    "commits"
-  ],
-  "engines": {
-    "vscode": "^1.85.0"
-  },
-  "categories": [
-    "SCM Providers",
-    "Other"
-  ],
-  "main": "./dist/extension.js",
-  "activationEvents": [],
-  "contributes": {
-    "viewsContainers": {
-      "activitybar": [
-        {
-          "id": "gitChecklist",
-          "title": "Git Merge Checklist",
-          "icon": "media/icon.svg"
-        }
-      ]
-    },
-    "views": {
-      "gitChecklist": [
-        {
-          "type": "webview",
-          "id": "gitChecklist.panel",
-          "name": "Checklist"
-        }
-      ]
-    },
-    "commands": [
-      {
-        "command": "gitChecklist.refresh",
-        "title": "Git Merge Checklist: Refresh",
-        "icon": "$(refresh)"
-      }
-    ],
-    "menus": {
-      "view/title": [
-        {
-          "command": "gitChecklist.refresh",
-          "when": "view == gitChecklist.panel",
-          "group": "navigation"
-        }
-      ]
-    },
-    "keybindings": [
-      {
-        "command": "gitChecklist.panel.focus",
-        "key": "shift+ctrl+alt+g",
-        "mac": "shift+ctrl+alt+g"
-      }
-    ]
-  },
-  "scripts": {
-    "build": "node esbuild.mjs",
-    "watch": "node esbuild.mjs --watch",
-    "typecheck": "tsc --noEmit",
-    "vscode:prepublish": "node esbuild.mjs --production",
-    "package": "vsce package",
-    "publish:ovsx": "ovsx publish"
-  },
-  "dependencies": {
-    "lucide-react": "^0.456.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "simple-git": "^3.27.0"
-  },
-  "devDependencies": {
-    "@types/node": "^20.14.0",
-    "@types/react": "^18.3.12",
-    "@types/react-dom": "^18.3.1",
-    "@types/vscode": "^1.85.0",
-    "@vscode/vsce": "^3.9.2",
-    "esbuild": "^0.24.0",
-    "ovsx": "^1.0.2",
-    "typescript": "^5.6.3"
-  }
+	"name": "git-merge-checklist",
+	"displayName": "Git Merge Checklist",
+	"description": "Keep a local checklist of which branches and commits you have already cherry-picked / merged.",
+	"version": "0.0.1",
+	"publisher": "desinox",
+	"private": true,
+	"license": "MIT",
+	"icon": "media/icon-128.png",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/desinox/git-merge-checklist-vscode-extension.git"
+	},
+	"homepage": "https://github.com/desinox/git-merge-checklist-vscode-extension#readme",
+	"bugs": {
+		"url": "https://github.com/desinox/git-merge-checklist-vscode-extension/issues"
+	},
+	"keywords": [
+		"git",
+		"cherry-pick",
+		"merge",
+		"checklist",
+		"commits"
+	],
+	"engines": {
+		"vscode": "^1.85.0"
+	},
+	"categories": [
+		"SCM Providers",
+		"Other"
+	],
+	"main": "./dist/extension.js",
+	"activationEvents": [],
+	"contributes": {
+		"viewsContainers": {
+			"activitybar": [
+				{
+					"id": "gitChecklist",
+					"title": "Git Merge Checklist",
+					"icon": "media/icon.svg"
+				}
+			]
+		},
+		"views": {
+			"gitChecklist": [
+				{
+					"type": "webview",
+					"id": "gitChecklist.panel",
+					"name": "Checklist"
+				}
+			]
+		},
+		"commands": [
+			{
+				"command": "gitChecklist.refresh",
+				"title": "Git Merge Checklist: Refresh",
+				"icon": "$(refresh)"
+			}
+		],
+		"menus": {
+			"view/title": [
+				{
+					"command": "gitChecklist.refresh",
+					"when": "view == gitChecklist.panel",
+					"group": "navigation"
+				}
+			]
+		},
+		"keybindings": [
+			{
+				"command": "gitChecklist.panel.focus",
+				"key": "shift+ctrl+alt+g",
+				"mac": "shift+ctrl+alt+g"
+			}
+		]
+	},
+	"scripts": {
+		"build": "node esbuild.mjs",
+		"watch": "node esbuild.mjs --watch",
+		"typecheck": "tsc --noEmit",
+		"format": "biome format --write .",
+		"lint": "biome lint .",
+		"check": "biome check --write .",
+		"vscode:prepublish": "node esbuild.mjs --production",
+		"package": "vsce package",
+		"publish:ovsx": "ovsx publish"
+	},
+	"dependencies": {
+		"lucide-react": "^0.456.0",
+		"react": "^18.3.1",
+		"react-dom": "^18.3.1",
+		"simple-git": "^3.27.0"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.3.7",
+		"@types/node": "^20.14.0",
+		"@types/react": "^18.3.12",
+		"@types/react-dom": "^18.3.1",
+		"@types/vscode": "^1.85.0",
+		"@vscode/vsce": "^3.9.2",
+		"esbuild": "^0.24.0",
+		"ovsx": "^1.0.2",
+		"typescript": "^5.6.3"
+	},
+	"packageManager": "pnpm@11.8.0+sha512.c1f5e7c4cb241c8f174b743851d82f42b802324afc8b0f116b96adb15aa06664948dde36960a3ba1079ba5b4b29dd0140135b94b5b5f5263592249d68e555f26"
 }
